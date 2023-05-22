@@ -1,0 +1,93 @@
+#安装rpm文件,同时安装依赖库
+yum localinstall code-1.78.2-1683731087.el7.x86_64.rpm
+yum localinstall SunloginClient_11.0.1.44968_amd64.rpm
+yum localinstall wps-office-10.1.0.6634-1.x86_64.rpm
+
+#安装Nvdia显卡驱动
+参考网址：https://www.cnblogs.com/deny/p/16305945.html
+1. 查看显卡信息
+# lspci | grep VGA
+03:00.0 VGA compatible controller: NVIDIA Corporation GP104 [GeForce GTX 1070] (rev a1)
+#或者
+lshw -numeric -C display
+2. 安装 NVIDIA 驱动检测工具
+# 导入key
+rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+# 安装elrepo源
+rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-2.el7.elrepo.noarch.rpm
+# 安装
+yum install nvidia-detect -y
+# 检测显卡驱动
+nvidia-detect-v
+   比如 440.36,可用于校验在第3步下载的显卡驱动版本是否合适
+   提示：不建议使用rpmfusion安装nvidia的显卡驱动，因为开源的显卡驱动在性能方面跟nvidia官方的闭源显卡驱动有一定的差距
+1. 安装依赖项
+yum -y install epel-release
+yum -y install gcc binutils wget
+yum -y install kernel-devel
+2. 禁用Nouveau
+修改dist-blacklist.conf文件：
+vim /lib/modprobe.d/dist-blacklist.conf
+将nvidiafb注释掉:
+#blacklist nvidiafb 
+然后添加以下语句：
+blacklist nouveau
+options nouveau modeset=0
+#备份img
+mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).img.bak
+#重建initramfs image
+dracut /boot/initramfs-$(uname -r).img $(uname -r)
+#修改运行级别为文本模式
+systemctl set-default multi-user.target
+#重启系统
+reboot
+3. 安装驱动
+#
+chmod +x NVIDIA-Linux-x86_64-525.85.05.run
+./NVIDIA-Linux-x86_64-525.85.05.run --kernel-source-path=/usr/src/kernels/3.10.0-1160.71.1.el7.x86_64 -k $(uname -r)
+./NVIDIA-Linux-x86_64-525.85.05.run --kernel-source-path=/usr/src/kernels/3.10.0-1160.90.1.el7.x86_64 -k $(uname -r)
+#安装成功
+nvidia-smi
+
+#卸载通过rpm文件安装的程序
+rpm -e --nodeps wps-office-11.1.0.11698-1.x86_64
+
+#安装vmware
+进入到vmware安装程序所在的文件夹
+./VMware-Workstation-Full-17.0.0-20800274.x86_64.bundle
+
+#安装vscode
+1. yum localinstall code-1.78.2-1683731087.el7.x86_64.rpm
+2.  root用户
+     vim ~/.bashrc
+     添加一行
+     alias code='/usr/share/code/code . --no-sandbox --unity-launch'
+     保存后，执行下边的命令生效
+     source ~/.bashrc 
+
+#安装wps-office
+  千万不要自行安装glibc2.18
+
+#安装Chrome浏览器
+1. 安装流程 
+cd /etc/yum.repos.d
+sudo vim google-chrome.repo
+2. 编辑输入如下内容
+[google-chrome]
+name=google-chrome
+baseurl=http://dl.google.com/linux/chrome/rpm/stable/$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub
+复制外部文本到vim   【Ctrl + C】【Shitf+insert】
+3. 然后:wq保存
+最后安装，输入如下bash。
+sudo yum -y install google-chrome-stable --nogpgcheck
+4.Linux 以root用户登录后无法打开chrome谷歌浏览器
+修改配置文件/usr/bin/google-chrome
+vim /usr/bin/google-chrome
+找到最后一行
+将exec -a "$0" "$HERE/chrome" "$@"，修改为
+exec -a "$0" "$HERE/chrome" "$@" --user-data-dir --no-sandbox
+至此谷歌浏览器安装完毕
+在Terminal输入google-chrome

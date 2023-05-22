@@ -1,0 +1,137 @@
+#安装docker
+
+#查看yum源
+ll /etc/yum.repos.d/
+
+#添加docker-ce仓库
+yum -y install yum-utils
+#安装阿里的docker-ce仓库
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+#查看可用的docker-ce版本
+yum list docker-ce --showduplicates | sort -r
+#安装指定版本的docker
+yum -y install docker-ce-23.0.6-1.el7 
+
+#卸载docker
+yum remove docker-ce-20.10.16-3.el7.x86_64
+yum remove docker-ce-cli-20.10.16-3.el7.x86_64
+yum remove docker-ce-rootless-extras-20.10.16-3.el7.x86_64
+yum remove docker-scan-plugin-0.17.0-3.el7.x86_64
+
+#安装 docker
+curl -fsSL https://get.docker.com/ | sh
+
+#查看docker版本 
+docker --version 
+
+#重启docker
+systemctl daemon-reload
+systemctl restart docker.service
+
+#查看docker是否配置成功
+docker info
+
+#查询镜像文件
+docker search postgis/postgis
+#查询镜像文件完整信息
+docker search --no-trunc --limit 2 postgis/postgis
+
+#拉取镜像
+docker pull postgis/postgis 
+
+#查看本地镜像
+docker images
+
+#删除本地镜像
+docker rmi postgis/postgis 
+
+#启动docker镜像
+sudo docker run -it -d -p 5432:5433 mdillon/postgis /bin/bash
+sudo docker run -it -d -p 5432:5434 postgis/postgis /bin/bash
+#启动postgis docker镜像
+docker run --name postgis_1 --privileged=true --restart=always -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=123456 -e POSTGRES_DB=gis_db -e ALLOW_IP_RANGE=0.0.0.0/0 -p 5433:5432 -v /home/data/docker_postgis_1:/var/lib/postgresql/data -d postgis/postgis
+
+参数说明：
+--name //指定创建的容器的名字postgresql;
+--privileged=true
+--restart=always
+-e POSTGRES_USER=postgres    //指定创建的容器的名字postgresql ；
+-e POSTGRES_PASSWORD=123456  //设置环境变量，指定数据库的登录口令为123456（必须的参数，并且不能为空，否则容器将会处于Restarting状态）
+-e POSTGRES_DB=gis_db   //如果在创建容器时没有使用该变量，则创建POSTGRES_USER对应的同名数据库（注意：如果POSTGRES_DB和POSTGRES_USER都显式声明的话，不要设置成一样的，否则psql连不上）
+-e ALLOW_IP_RANGE=0.0.0.0/0  //这个表示允许所有ip访问，如果不加，则非本机 ip 访问不了
+-p 5433:5432 //端口映射
+-v /docker/postgresql/data:/var/lib/postgresql/data //磁盘文件映射
+-d postgis/postgis:12-3.2   //允许该容器以守护态（Daemonized）形式运行于后台
+-t //让docker分配一个伪终端（pseudo-tty）并绑定到该容器的标准输入上（这是为了在交互模式下用户可以通过所创建的终端来输入命令）
+
+docker run -t --name postgresql --restart always  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=123456 -e ALLOW_IP_RANGE=0.0.0.0/0 -p 5433:5432 -d kartoza/postgis:9.6-2.4
+
+docker run --name postgis --restart always -e POSTGRES_PASSWORD='password' -v /home/postgis:/var/lib/postgresql/data --privileged=true -p 5432:5432 -d postgis/postgis
+
+#关闭容器
+docker stop 容器名称
+docker stop 70da1a687c19
+
+#移除本地容器
+docker rm 70da1a687c19
+
+#查看docker容器状态
+docker ps -a
+
+#查看容器日志
+docker logs 容器ID
+
+#查看容器内运行的进程
+docker inspect 容器ID
+
+#进入正在运行的进程内部
+docker exec -it 容器ID bash
+docker exec -it e79b5469ef97 bash
+#重新进入容器
+docker attach 容器ID
+
+#退出容器
+快捷键 Ctrl + P + Q
+
+#查找文件
+find / -name pg_hba.conf
+
+#将文件从docker容器拷贝到宿主机
+docker cp <containerID>:/path/to/file  /path/on/host
+docker cp 70da1a687c19:/usr/lib/tmpfiles.d/postgresql.conf /home/a.txt
+docker cp e79b5469ef97:/usr/share/postgresql/postgresql.conf.sample /home/postgresql.conf.sample
+docker cp e79b5469ef97:/usr/share/postgresql/postgresql.conf.sample.dpkg /home/postgresql.conf.sample.dpkg
+
+#将文件从宿主机拷贝到docker容器
+docker cp /path/on/host <containerID>:/path/to/file
+
+#启动一个容器
+docker run -t 
+--name postgresForFzysV2     #指定容器名
+--restart always                     #设置总是自动重启
+-e POSTGRES_USER=postgres   #设置环境变量，指定数据库用户名为postgres
+-e POSTGRES_PASSWORD=123! #设置密码为123！
+-e ALLOW_IP_RANGE=0.0.0.0/0 #允许所有ip访问，如果不加，则非本机 ip 访问不了
+
+docker run -t --name docker_kartoza_postgis --restart always -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=123456 -e ALLOW_IP_RANGE=0.0.0.0/0 -p 5432:5432 -v /root/DATA/postgresql_docker_kartoza_postgis:/var/lib/postgresql/data -d kartoza/postgis
+docker run -t --name docker_postgis_postgis --restart always -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=123456 -e ALLOW_IP_RANGE=0.0.0.0/0 -p 5433:5432 -v /root/DATA/postgresql_docker_postgis_postgis:/var/lib/postgresql/data -d postgis/postgis
+#查看容器日志
+docker logs --since 30 容器名
+
+
+#其它
+#docker更换镜像源
+cd /etc/docker
+vim daemon.json
+加入如下配置：
+{
+    "registry-mirrors" : [
+    "https://registry.docker-cn.com",
+    "http://hub-mirror.c.163.com",
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://cr.console.aliyun.com",
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+
+jetbrains.com/datagrip/download/#section=windows
